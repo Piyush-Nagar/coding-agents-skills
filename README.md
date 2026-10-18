@@ -1,0 +1,3 @@
+# engineering-playbook
+
+This repository serves as a common engineering guideline reference designed to assist AI coding agents across different development contexts. It is organized into three top-level sections: `core` for universal rules that apply regardless of stack, `backend` for server-side standards covering general backend principles and Java/Spring Boot specifics, and `frontend` for client-side standards covering foundational HTML, CSS, and JavaScript along with React-specific patterns. Any coding agent working within this codebase or referencing this playbook should treat these guidelines as the baseline for code quality, consistency, and best practices across all projects.
