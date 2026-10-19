@@ -23,17 +23,54 @@ Exceptions are for *exceptional* conditions. Treat them with the same care as an
 ```
 RuntimeException
 └── DomainException                        # base — never thrown directly
-    ├── NotFoundException                  # → 404
-    ├── ValidationException                # → 400
-    ├── ConflictException                  # → 409 (duplicate, version conflict)
-    ├── UnauthorizedException              # → 401
-    ├── ForbiddenException                 # → 403
+    ├── NotFoundException                  # → 404                 (permanent)
+    ├── ValidationException                # → 400                 (permanent)
+    ├── ConflictException                  # → 409                 (permanent, usually)
+    ├── UnauthorizedException              # → 401                 (permanent)
+    ├── ForbiddenException                 # → 403                 (permanent)
     └── ExternalServiceException           # → 502 / 503
+        ├── TransientException             # retryable  — timeout, 503, connection reset
+        └── PermanentException             # not retryable — 400 from downstream, bad request
 ```
 
 - Each carries an **error code** (stable, machine-readable: `TESTCASE_NOT_FOUND`) and a **safe message**.
 - The global handler maps type → HTTP status and renders the response DTO.
 - Feature code throws subclasses only; the base `DomainException` is never thrown directly.
+- `TransientException` is a **marker type** — retry/backoff logic keys off it, so a caller doesn't have to introspect messages or status codes.
+
+## Transient vs permanent errors
+
+An exception is **transient** if the same call *could succeed later* without any change to inputs. Everything else is **permanent**. Classifying this up front is what makes the rest of the system — retries, circuit breakers, dead-letter queues — actually safe.
+
+**Transient (retry with backoff):**
+- Network: connection reset, DNS failure, socket timeout.
+- Downstream `503 Service Unavailable`, `504 Gateway Timeout`, `429 Too Many Requests`.
+- DB: lock-wait timeout, serialization failure, deadlock, connection pool exhaustion.
+- Cloud/infra: throttling (`ProvisionedThroughputExceeded`, `ThrottlingException`).
+
+**Permanent (do NOT retry):**
+- `4xx` from downstream (except `408`, `425`, `429`) — bad request, auth, not found.
+- Validation failures, business-rule violations, duplicate-key errors.
+- `NullPointerException`, `IllegalStateException`, parse errors — programmer bugs. Fix the code, don't retry.
+
+### How to handle each
+
+- **Classify at the lowest layer that knows.** The HTTP/DB client wraps the raw error into `TransientException` or `PermanentException` once. Nobody above re-classifies.
+- **Retry only `TransientException`, and only for idempotent operations.** Exponential backoff + jitter, capped (e.g. 3–5 attempts, max 10s total). See [reliability](../nfr/reliability/SKILL.md).
+- **Non-idempotent mutations need an idempotency key** before you're allowed to retry. Without one, a retried `POST /payments` double-charges.
+- **Circuit-break on sustained transient failure.** When the error rate stays high, open the breaker and fail fast instead of hammering a sick dependency.
+- **Permanent errors return to the caller.** No retry, no backoff. Map to the right HTTP status and move on.
+- **Log transient at `WARN`, permanent at the appropriate level** (`INFO` for 4xx caller errors, `ERROR` for 5xx and bugs). A loud `ERROR` on every transient blip is alert fatigue in the making.
+- **Preserve attempt count in logs/traces.** `attempt=3/5` tells the on-call that retries happened and ran out. Silent retries hide the real latency story.
+- **Dead-letter async messages after the retry budget.** For queue consumers, a message that keeps throwing `TransientException` goes to DLQ with its context, not to an infinite retry loop.
+
+### Red flags specific to transient handling
+
+- Catching an exception, retrying unconditionally, no backoff, no cap.
+- Retrying a `ValidationException` or a `404`. (It will fail every time.)
+- Retrying a non-idempotent `POST` without an idempotency key.
+- The same transient error logged at `ERROR` on every retry attempt.
+- Code that inspects `e.getMessage().contains("timeout")` to decide whether to retry.
 
 ## Red flags
 
