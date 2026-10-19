@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Skill(update-config)"
+    ]
+  },
+  "skillOverrides": {
+    "testsprite-onboard": "off",
+    "testsprite-verify": "off",
+    "deep-research": "off",
+    "claude-api": "off",
+    "loop": "user-invocable-only",
+    "schedule": "user-invocable-only"
+  }
+}
