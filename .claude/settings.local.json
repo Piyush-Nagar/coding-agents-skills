@@ -1,16 +1,8 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Bash(git -C /Users/piyushnagar/Documents/project_personal/engineering-playbook-personal mv backend/core/SKILL.md backend/core/packaging/SKILL.md)"
     ]
-  },
-  "skillOverrides": {
-    "testsprite-onboard": "off",
-    "testsprite-verify": "off",
-    "deep-research": "off",
-    "claude-api": "off",
-    "loop": "user-invocable-only",
-    "schedule": "user-invocable-only"
   }
 }

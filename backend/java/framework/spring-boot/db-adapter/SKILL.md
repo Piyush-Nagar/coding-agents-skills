@@ -2,7 +2,7 @@
 
 How we write database access in a Spring Boot service. The goal is **readable, type-safe queries by default**, dropping down to lower-level tools only when the problem genuinely requires it.
 
-Lives inside `db/<tableName>/dao/` and `db/<tableName>/repository/` — see [backend/core/SKILL.md](../../../../core/SKILL.md) for the module layout.
+Lives inside `db/<tableName>/dao/` and `db/<tableName>/repository/` — see [backend/core/packaging](../../../../core/packaging/SKILL.md) for the module layout.
 
 ## The three-tier rule
 

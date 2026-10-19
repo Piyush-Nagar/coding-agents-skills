@@ -4,7 +4,7 @@ Code is read far more often than it is written. Maintainability is what separate
 
 ## Rules
 
-- **One feature, one place.** Package by feature (see [backend/core/SKILL.md](../../SKILL.md)). A single change should touch adjacent files, not scattered layers.
+- **One feature, one place.** Package by feature (see [backend/core/packaging](../../packaging/SKILL.md)). A single change should touch adjacent files, not scattered layers.
 - **Interfaces at module boundaries only.** Inside a feature, concrete classes are fine. Interfaces exist to let callers depend on contracts across boundaries, not to decorate every class.
 - **Delete, don't comment out.** Dead code and `// TODO`-forever comments rot. Git remembers; the IDE doesn't need to.
 - **Prefer small, pure functions.** Easier to test, easier to reason about, easier to compose. Side effects at the edges of the system, not scattered through it.
